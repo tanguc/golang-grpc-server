@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+package upstream.grpc.service;
+
+option go_package = "proto/upstream";
+
+service UpstreamPeerService {
+  rpc bidirectionalStreaming(stream InputStreamRequest)
+      returns (stream OutputStreamRequest) {}
+  rpc ready(ReadyRequest) returns (ReadyResult);
+  rpc live(stream LiveRequest) returns (stream LiveResult);
+}
+
+message ReadyRequest {
+  Header header = 1;
+  string ready = 2;
+  // ^^^^^^
+  // ||||||
+  // because https://github.com/tokopedia/gripmock/ have been coded by looser
+  // and they cant handle match of regexp on anything other than string, you
+  // sucks. TODO delete when wel'll get ride out of these tools.
+}
+
+message ReadyResult {
+  Header header = 1;
+  bool ready = 2;
+}
+
+message LiveRequest { Header header = 1; }
+
+message LiveResult {
+  Header header = 1;
+  bool live = 2;
+}
+
+message Header {
+  string address = 1;
+  string time = 2;
+  string client_uuid = 3;
+}
+
+message InputStreamRequest {
+  Header header = 1;
+  string payload = 2;
+}
+
+message OutputStreamRequest {
+  Header header = 1;
+  string payload = 2;
+}
