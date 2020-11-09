@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+option go_package = "persistent_marking_lb/proto";
+
+package upstream.grpc.service;
+import "empty.proto";
+
+service UpstreamPeerService {
+  rpc bidirectionalStreaming(stream InputStreamRequest)
+      returns(stream OutputStreamRequest) {}
+  rpc ready(google.protobuf.Empty) returns(ReadyResult);
+  rpc live(stream google.protobuf.Empty) returns(stream LiveResult);
+}
+
+message ReadyResult {
+  string time = 1;
+  bool ready = 2;
+}
+
+message LiveResult {
+  string time = 1;
+  bool live = 2;
+}
+
+message Header {
+  string address = 1;
+  string time = 2;
+  string client_uuid = 3;
+}
+
+message InputStreamRequest {
+  Header header = 1;
+  bytes payload = 2;
+}
+
+message OutputStreamRequest {
+  Header header = 1;
+  bytes payload = 2;
+}
