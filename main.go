@@ -27,18 +27,44 @@ func (s *server) BidirectionalStreaming(server pb.UpstreamPeerService_Bidirectio
 	var msg *pb.InputStreamRequest
 	var err error
 	fmt.Println("bi-directional streaming ON")
+	weirdHeuristic := 0
 
 	for ; err == nil; msg, err = server.Recv() {
 		if msg != nil {
 			fmt.Printf("Streaming INPUT = %v\n", msg)
 
 			payload := []byte("Salut à toi cher downstream")
-			// time.Sleep(1000 * time.Millisecond)
-			result := pb.OutputStreamRequest{
-				Header:  generateHeader(msg.GetHeader()),
-				Payload: payload,
+
+			time := time.Now().Local().Format("Mon Jan 2 15:04:05 MST 2006")
+
+			var res *pb.OutputStreamRequest
+			if weirdHeuristic%2 != 0 {
+				res = &pb.OutputStreamRequest{
+					Payload: payload,
+					Time:    time,
+					Target: &pb.OutputStreamRequest_Broadcast_{
+						Broadcast: pb.OutputStreamRequest_BROADCAST_ALL,
+					},
+				}
+
+			} else {
+				res = &pb.OutputStreamRequest{
+					Payload: payload,
+					Time:    time,
+					Target: &pb.OutputStreamRequest_ClientUuid{
+						ClientUuid: msg.ClientUuid,
+					},
+				}
 			}
-			server.Send(&result)
+
+			// time.Sleep(1000 * time.Millisecond)
+			// result := pb.OutputStreamRequest{
+			// 	Header:  generateHeader(msg.GetHeader()),
+			// 	Payload: payload,
+			// }
+
+			server.Send(res)
+			weirdHeuristic++
 		}
 	}
 	fmt.Printf("Stream closed : %v\n", err)
@@ -61,19 +87,19 @@ func (s *server) Ready(context context.Context, in *emptypb.Empty) (*pb.ReadyRes
 	return result, nil
 }
 
-func generateHeader(oldHeader *pb.Header) *pb.Header {
-	header := new(pb.Header)
-	if oldHeader != nil {
-		header.Address = oldHeader.Address
-		header.ClientUuid = oldHeader.ClientUuid
-		header.Time = time.Now().Local().Format("Mon Jan 2 15:04:05 MST 2006")
-	} else {
-		fmt.Printf("Warning: the old header was nil")
+// func generateHeader(oldHeader *pb.Header) *pb.Header {
+// 	header := new(pb.Header)
+// 	if oldHeader != nil {
+// 		header.Address = oldHeader.Address
+// 		header.ClientUuid = oldHeader.ClientUuid
+// 		header.Time = time.Now().Local().Format("Mon Jan 2 15:04:05 MST 2006")
+// 	} else {
+// 		fmt.Printf("Warning: the old header was nil")
 
-	}
+// 	}
 
-	return header
-}
+// 	return header
+// }
 
 func (s *server) Live(server pb.UpstreamPeerService_LiveServer) error {
 	fmt.Printf("Live?\n")
